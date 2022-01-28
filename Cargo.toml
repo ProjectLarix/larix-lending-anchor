@@ -1,0 +1,12 @@
+[package]
+name = "larix-lending-anchor"
+version = "0.1.0"
+edition = "2021"
+
+description = "Larix Lending Anchor Adaptor"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anchor-lang = "0.20.1"
+thiserror = "1.0.30"
+larix-lending = { git = "https://github.com/ProjectLarix/larix-lending" }
