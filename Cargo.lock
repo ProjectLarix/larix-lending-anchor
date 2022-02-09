@@ -776,7 +776,6 @@ checksum = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 [[package]]
 name = "larix-lending"
 version = "0.1.0"
-source = "git+https://github.com/ProjectLarix/larix-lending#c76c4cc72110822fc3054949c698d83dced070e2"
 dependencies = [
  "anchor-lang 0.18.2",
  "arrayref",
