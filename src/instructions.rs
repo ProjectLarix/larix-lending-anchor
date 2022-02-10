@@ -121,9 +121,9 @@ pub fn init_obligation2<'a, 'b, 'c, 'info>(
     invoke_signed(
         &ix,
         &[
-                      ctx.accounts.system_program.to_account_info(),
-                      ctx.accounts.payer.to_account_info(),
-                      ctx.accounts.obligation_pubkey.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.obligation_pubkey.to_account_info(),
                   ],
         ctx.signer_seeds)?;
     let ix = larix_lending::instruction::init_obligation(
