@@ -5,7 +5,7 @@ use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use larix_lending::id as larix_lending_id;
 use larix_lending::instruction::LendingInstruction;
 use larix_lending::state::obligation::OBLIGATION_LEN;
-use crate::accounts::{BorrowObligationLiquidity, ClaimObligationMine, DepositObligationCollateral, DepositReserveLiquidity, InitLendingMarket, InitObligation, InitObligation2, RedeemReserveCollateral, RefreshObligation, RefreshReserves, RepayObligationLiquidity};
+use crate::accounts::{BorrowObligationLiquidity, ClaimObligationMine, DepositObligationCollateral, DepositReserveLiquidity, InitLendingMarket, InitObligation, InitObligation2, LiquidateObligation, LiquidateObligation2, RedeemReserveCollateral, RefreshObligation, RefreshReserves, RepayObligationLiquidity};
 
 pub fn init_lending_market<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, InitLendingMarket<'info>>,
@@ -245,5 +245,31 @@ pub fn claim_obligation_mine<'a, 'b, 'c, 'info>(
         &ix,
         &ctx.to_account_infos(),
         ctx.signer_seeds
+    )
+}
+pub fn liquidate_obligation<'a, 'b, 'c, 'info>(
+    ctx: CpiContext<'a, 'b, 'c, 'info, LiquidateObligation<'info>>,
+    liquidity_amount:u64
+) -> ProgramResult{
+    liquidate_obligation_2(
+        CpiContext::new_with_signer(ctx.program,ctx.accounts.liquidity_obligation_2,ctx.signer_seeds),
+        liquidity_amount
+    )
+}
+pub fn liquidate_obligation_2<'a, 'b, 'c, 'info>(
+    ctx: CpiContext<'a, 'b, 'c, 'info, LiquidateObligation2<'info>>,
+    liquidity_amount:u64
+) -> ProgramResult{
+    let ix = Instruction {
+        program_id: larix_lending_id(),
+        accounts: ctx.to_account_metas(Option::from(false)),
+        data: LendingInstruction::LiquidateObligation2 {
+            liquidity_amount
+        }.pack(),
+    };
+    invoke_signed(
+        &ix,
+        &ctx.to_account_infos(),
+        ctx.signer_seeds,
     )
 }

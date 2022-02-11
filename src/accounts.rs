@@ -144,3 +144,28 @@ pub struct ClaimObligationMine<'info>{
     pub lending_market:AccountInfo<'info>,
     pub lending_market_authority:AccountInfo<'info>
 }
+#[derive(Accounts)]
+pub struct LiquidateObligation<'info>{
+    pub liquidity_obligation_2:LiquidateObligation2<'info>,
+    pub clock:AccountInfo<'info>
+}
+#[derive(Accounts)]
+pub struct LiquidateObligation2<'info>{
+    #[account(mut)]
+    pub source_liquidity:AccountInfo<'info>,
+    #[account(mut)]
+    pub destination_collateral:AccountInfo<'info>,
+    #[account(mut)]
+    pub repay_reserve:AccountInfo<'info>,
+    #[account(mut)]
+    pub repay_reserve_liquidity_supply:AccountInfo<'info>,
+    #[account(mut)]
+    pub withdraw_reserve:AccountInfo<'info>,
+    #[account(mut)]
+    pub withdraw_reserve_collateral_supply:AccountInfo<'info>,
+    #[account(mut)]
+    pub obligation:AccountInfo<'info>,
+    pub lending_market_:AccountInfo<'info>,
+    pub user_transfer_authority:Signer<'info>,
+    pub token_program:AccountInfo<'info>
+}
