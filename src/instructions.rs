@@ -5,7 +5,7 @@ use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use larix_lending::id as larix_lending_id;
 use larix_lending::instruction::LendingInstruction;
 use larix_lending::state::obligation::OBLIGATION_LEN;
-use crate::accounts::{BorrowObligationLiquidity, ClaimObligationMine, DepositObligationCollateral, DepositReserveLiquidity, InitLendingMarket, InitObligation, InitObligation2, LiquidateObligation, LiquidateObligation2, RedeemReserveCollateral, RefreshObligation, RefreshReserves, RepayObligationLiquidity};
+use crate::accounts::{BorrowObligationLiquidity, ClaimObligationMine, DepositObligationCollateral, DepositReserveLiquidity, InitLendingMarket, InitObligation, InitObligation2, LiquidateObligation, LiquidateObligation2, RedeemReserveCollateral, RefreshObligation, RefreshReserves, RepayObligationLiquidity, WithdrawObligationCollateral};
 
 pub fn init_lending_market<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, InitLendingMarket<'info>>,
@@ -178,6 +178,52 @@ pub fn deposit_obligation_collateral<'a, 'b, 'c, 'info>(
         ctx.accounts.obligation_owner.key(),
         ctx.accounts.user_transfer_authority.key(),
         reserve_pubkeys
+    );
+    invoke_signed(
+        &ix,
+        &ctx.to_account_infos(),
+        ctx.signer_seeds
+    )
+}
+
+pub fn deposit_obligation_collateral2<'a, 'b, 'c, 'info>(
+    ctx: CpiContext<'a, 'b, 'c, 'info, DepositObligationCollateral<'info>>,
+    collateral_amount:u64
+) -> ProgramResult {
+    let mut reserve_pubkeys = vec![];
+    for i in 0..ctx.remaining_accounts.len() {
+        reserve_pubkeys.push(*ctx.remaining_accounts[i].key);
+    }
+    let ix = larix_lending::instruction::deposit_obligation_collateral2(
+        larix_lending_id(),
+        collateral_amount,
+        ctx.accounts.source_collateral.key(),
+        ctx.accounts.destination_collateral.key(),
+        ctx.accounts.deposit_reserve.key(),
+        ctx.accounts.obligation.key(),
+        ctx.accounts.lending_market.key(),
+        ctx.accounts.obligation_owner.key(),
+        ctx.accounts.user_transfer_authority.key()
+    );
+    invoke_signed(
+        &ix,
+        &ctx.to_account_infos(),
+        ctx.signer_seeds
+    )
+}
+pub fn withdraw_obligation_collateral<'a, 'b, 'c, 'info>(
+    ctx: CpiContext<'a, 'b, 'c, 'info, WithdrawObligationCollateral<'info>>,
+    collateral_amount: u64
+) -> ProgramResult{
+    let ix = larix_lending::instruction::withdraw_obligation_collateral(
+        larix_lending_id(),
+        collateral_amount,
+        ctx.accounts.source_collateral.key(),
+        ctx.accounts.destination_collateral.key(),
+        ctx.accounts.withdraw_reserve.key(),
+        ctx.accounts.obligation.key(),
+        ctx.accounts.lending_market.key(),
+        ctx.accounts.obligation_owner.key()
     );
     invoke_signed(
         &ix,

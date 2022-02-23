@@ -100,6 +100,39 @@ pub struct DepositObligationCollateral<'info>{
     pub token_program:AccountInfo<'info>
 }
 #[derive(Accounts)]
+pub struct DepositObligationCollateral2<'info>{
+    #[account(mut)]
+    pub source_collateral: AccountInfo<'info>,
+    #[account(mut)]
+    pub destination_collateral: AccountInfo<'info>,
+    #[account(mut)]
+    pub deposit_reserve: AccountInfo<'info>,
+    #[account(mut)]
+    pub obligation: AccountInfo<'info>,
+    pub lending_market: AccountInfo<'info>,
+    pub obligation_owner: Signer<'info>,
+    pub user_transfer_authority: Signer<'info>,
+    pub token_program:AccountInfo<'info>
+}
+#[derive(Accounts)]
+pub struct WithdrawObligationCollateral<'info>{
+    #[account(mut)]
+    pub source_collateral: AccountInfo<'info>,
+    #[account(mut)]
+    pub destination_collateral: AccountInfo<'info>,
+    ///
+    /// refreshed
+    ///
+    #[account(mut)]
+    pub withdraw_reserve: AccountInfo<'info>,
+    ///
+    /// refreshed when borrows is not empty.
+    ///
+    pub obligation: AccountInfo<'info>,
+    pub lending_market: AccountInfo<'info>,
+    pub obligation_owner: Signer<'info>,
+}
+#[derive(Accounts)]
 pub struct BorrowObligationLiquidity<'info>{
     #[account(mut)]
     pub source_liquidity: AccountInfo<'info>,
