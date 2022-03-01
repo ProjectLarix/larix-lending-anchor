@@ -1,3 +1,9 @@
+use crate::accounts::{
+    BorrowObligationLiquidity, ClaimObligationMine, DepositObligationCollateral,
+    DepositReserveLiquidity, InitLendingMarket, InitObligation, InitObligation2,
+    LiquidateObligation, LiquidateObligation2, RedeemReserveCollateral, RefreshObligation,
+    RefreshReserves, RepayObligationLiquidity,
+};
 use anchor_lang::context::CpiContext;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
@@ -5,45 +11,37 @@ use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use larix_lending::id as larix_lending_id;
 use larix_lending::instruction::LendingInstruction;
 use larix_lending::state::obligation::OBLIGATION_LEN;
-use crate::accounts::{BorrowObligationLiquidity, ClaimObligationMine, DepositObligationCollateral, DepositReserveLiquidity, InitLendingMarket, InitObligation, InitObligation2, LiquidateObligation, LiquidateObligation2, RedeemReserveCollateral, RefreshObligation, RefreshReserves, RepayObligationLiquidity};
 
 pub fn init_lending_market<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, InitLendingMarket<'info>>,
     quote_currency: [u8; 32],
-) -> ProgramResult {
+) -> Result<()> {
     let ix = Instruction {
         program_id: larix_lending_id(),
         accounts: ctx.to_account_metas(Option::from(false)),
         data: LendingInstruction::InitLendingMarket {
             owner: ctx.accounts.authority.key(),
             quote_currency,
-        }.pack(),
+        }
+        .pack(),
     };
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds,
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 ///
 /// ctx.remaining_accounts: Other reserve and oracle s
 ///
 ///
 pub fn refresh_reserves<'a, 'b, 'c, 'info>(
-    ctx: CpiContext<'a, 'b, 'c, 'info, RefreshReserves<'info>>
-) -> ProgramResult{
+    ctx: CpiContext<'a, 'b, 'c, 'info, RefreshReserves<'info>>,
+) -> Result<()> {
     let mut reserves = vec![ctx.accounts.reserve.key()];
     let mut oracles = vec![ctx.accounts.oracle.key()];
-    for i in 0..ctx.remaining_accounts.len()/2 {
-        reserves.push(ctx.remaining_accounts[i*2].key());
-        oracles.push(ctx.remaining_accounts[i*2+1].key());
+    for i in 0..ctx.remaining_accounts.len() / 2 {
+        reserves.push(ctx.remaining_accounts[i * 2].key());
+        oracles.push(ctx.remaining_accounts[i * 2 + 1].key());
     }
-    let ix = larix_lending::instruction::refresh_reserves(
-        larix_lending_id(),
-        reserves,
-        oracles,
-    );
-    invoke(&ix, &ctx.to_account_infos())
+    let ix = larix_lending::instruction::refresh_reserves(larix_lending_id(), reserves, oracles);
+    invoke(&ix, &ctx.to_account_infos()).map_err(Into::into)
 }
 ///
 ///
@@ -54,8 +52,8 @@ pub fn refresh_reserves<'a, 'b, 'c, 'info>(
 ///
 pub fn deposit_reserve_liquidity<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, DepositReserveLiquidity<'info>>,
-    liquidity_amount:u64,
-) -> ProgramResult{
+    liquidity_amount: u64,
+) -> Result<()> {
     let ix = larix_lending::instruction::deposit_reserve_liquidity(
         larix_lending_id(),
         liquidity_amount,
@@ -67,14 +65,13 @@ pub fn deposit_reserve_liquidity<'a, 'b, 'c, 'info>(
         ctx.accounts.lending_market.key(),
         ctx.accounts.lending_market_authority.key(),
         ctx.accounts.user_transfer_authority.key(),
-
     );
-    invoke_signed(&ix, &ctx.to_account_infos(),ctx.signer_seeds)
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 pub fn redeem_reserve_collateral<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, RedeemReserveCollateral<'info>>,
-    liquidity_amount:u64,
-) -> ProgramResult{
+    liquidity_amount: u64,
+) -> Result<()> {
     let ix = larix_lending::instruction::redeem_reserve_collateral(
         larix_lending_id(),
         liquidity_amount,
@@ -87,63 +84,64 @@ pub fn redeem_reserve_collateral<'a, 'b, 'c, 'info>(
         ctx.accounts.lending_market_authority.key(),
         ctx.accounts.user_transfer_authority.key(),
     );
-    invoke_signed(&ix, &ctx.to_account_infos(),ctx.signer_seeds)
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 
 pub fn init_obligation<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, InitObligation<'info>>,
-) -> ProgramResult {
+) -> Result<()> {
     let ix = larix_lending::instruction::init_obligation(
         larix_lending_id(),
         ctx.accounts.obligation.key(),
         ctx.accounts.lending_market.key(),
-        ctx.accounts.obligation_owner.key()
+        ctx.accounts.obligation_owner.key(),
     );
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 pub fn init_obligation2<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, InitObligation2<'info>>,
-) -> ProgramResult {
+) -> Result<()> {
     let min_balance = Rent::get()?.minimum_balance(OBLIGATION_LEN);
     let ix = anchor_lang::solana_program::system_instruction::transfer(
         &ctx.accounts.payer.key(),
         &ctx.accounts.init_obligation.obligation.key(),
-        min_balance
+        min_balance,
     );
     invoke_signed(
         &ix,
         &[
-                        ctx.accounts.system_program.to_account_info(),
-                        ctx.accounts.payer.to_account_info(),
-                        ctx.accounts.init_obligation.obligation.to_account_info(),
-                  ],
-        ctx.signer_seeds)?;
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.init_obligation.obligation.to_account_info(),
+        ],
+        ctx.signer_seeds,
+    )?;
 
     let ix = anchor_lang::solana_program::system_instruction::allocate(
         &ctx.accounts.init_obligation.obligation.key(),
-        OBLIGATION_LEN as u64
+        OBLIGATION_LEN as u64,
     );
     invoke_signed(
         &ix,
         &[
-                        ctx.accounts.system_program.to_account_info(),
-                        ctx.accounts.init_obligation.obligation.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.init_obligation.obligation.to_account_info(),
         ],
-        ctx.signer_seeds)?;
+        ctx.signer_seeds,
+    )?;
 
-    init_obligation(CpiContext::new_with_signer(ctx.program,ctx.accounts.init_obligation,ctx.signer_seeds))
-
+    init_obligation(CpiContext::new_with_signer(
+        ctx.program,
+        ctx.accounts.init_obligation,
+        ctx.signer_seeds,
+    ))
 }
 ///
 /// @param ctx.remaining_accounts: deposit reserves and borrow reserves that should be refreshed
 ///
 pub fn refresh_obligation<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, RefreshObligation<'info>>,
-) -> ProgramResult {
+) -> Result<()> {
     let mut reserve_pubkeys = vec![];
     for i in 0..ctx.remaining_accounts.len() {
         reserve_pubkeys.push(*ctx.remaining_accounts[i].key);
@@ -153,15 +151,15 @@ pub fn refresh_obligation<'a, 'b, 'c, 'info>(
         ctx.accounts.obligation.key(),
         reserve_pubkeys,
     );
-    invoke(&ix, &ctx.to_account_infos())
+    invoke(&ix, &ctx.to_account_infos()).map_err(Into::into)
 }
 ///
 /// @param ctx.remaining_accounts: deposit reserves and borrow reserves
 ///
 pub fn deposit_obligation_collateral<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, DepositObligationCollateral<'info>>,
-    collateral_amount:u64
-) -> ProgramResult {
+    collateral_amount: u64,
+) -> Result<()> {
     let mut reserve_pubkeys = vec![];
     for i in 0..ctx.remaining_accounts.len() {
         reserve_pubkeys.push(*ctx.remaining_accounts[i].key);
@@ -177,18 +175,14 @@ pub fn deposit_obligation_collateral<'a, 'b, 'c, 'info>(
         ctx.accounts.lending_market_authority.key(),
         ctx.accounts.obligation_owner.key(),
         ctx.accounts.user_transfer_authority.key(),
-        reserve_pubkeys
+        reserve_pubkeys,
     );
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 pub fn borrow_obligation_liquidity<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, BorrowObligationLiquidity<'info>>,
-    liquidity_amount:u64
-) -> ProgramResult{
+    liquidity_amount: u64,
+) -> Result<()> {
     let ix = larix_lending::instruction::borrow_obligation_liquidity(
         larix_lending_id(),
         liquidity_amount,
@@ -201,18 +195,14 @@ pub fn borrow_obligation_liquidity<'a, 'b, 'c, 'info>(
         ctx.accounts.lending_market_authority.key(),
         ctx.accounts.obligation_owner.key(),
         ctx.accounts.larix_oracle_program.key(),
-        ctx.accounts.mine_mint.key()
+        ctx.accounts.mine_mint.key(),
     );
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 pub fn repay_obligation_liquidity<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, RepayObligationLiquidity<'info>>,
-    liquidity_amount:u64
-) -> ProgramResult{
+    liquidity_amount: u64,
+) -> Result<()> {
     let ix = larix_lending::instruction::repay_obligation_liquidity(
         larix_lending_id(),
         liquidity_amount,
@@ -221,17 +211,13 @@ pub fn repay_obligation_liquidity<'a, 'b, 'c, 'info>(
         ctx.accounts.repay_reserve.key(),
         ctx.accounts.obligation.key(),
         ctx.accounts.lending_market.key(),
-        ctx.accounts.user_transfer_authority.key()
+        ctx.accounts.user_transfer_authority.key(),
     );
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 pub fn claim_obligation_mine<'a, 'b, 'c, 'info>(
-    ctx: CpiContext<'a, 'b, 'c, 'info, ClaimObligationMine<'info>>
-) -> ProgramResult{
+    ctx: CpiContext<'a, 'b, 'c, 'info, ClaimObligationMine<'info>>,
+) -> Result<()> {
     let ix = larix_lending::instruction::claim_obligation_mine(
         larix_lending_id(),
         ctx.accounts.obligation.key(),
@@ -239,37 +225,31 @@ pub fn claim_obligation_mine<'a, 'b, 'c, 'info>(
         ctx.accounts.destination_account.key(),
         ctx.accounts.obligation_owner.key(),
         ctx.accounts.lending_market.key(),
-        ctx.accounts.lending_market_authority.key()
+        ctx.accounts.lending_market_authority.key(),
     );
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }
 pub fn liquidate_obligation<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, LiquidateObligation<'info>>,
-    liquidity_amount:u64
-) -> ProgramResult{
+    liquidity_amount: u64,
+) -> Result<()> {
     liquidate_obligation_2(
-        CpiContext::new_with_signer(ctx.program,ctx.accounts.liquidity_obligation_2,ctx.signer_seeds),
-        liquidity_amount
+        CpiContext::new_with_signer(
+            ctx.program,
+            ctx.accounts.liquidity_obligation_2,
+            ctx.signer_seeds,
+        ),
+        liquidity_amount,
     )
 }
 pub fn liquidate_obligation_2<'a, 'b, 'c, 'info>(
     ctx: CpiContext<'a, 'b, 'c, 'info, LiquidateObligation2<'info>>,
-    liquidity_amount:u64
-) -> ProgramResult{
+    liquidity_amount: u64,
+) -> Result<()> {
     let ix = Instruction {
         program_id: larix_lending_id(),
         accounts: ctx.to_account_metas(Option::from(false)),
-        data: LendingInstruction::LiquidateObligation2 {
-            liquidity_amount
-        }.pack(),
+        data: LendingInstruction::LiquidateObligation2 { liquidity_amount }.pack(),
     };
-    invoke_signed(
-        &ix,
-        &ctx.to_account_infos(),
-        ctx.signer_seeds,
-    )
+    invoke_signed(&ix, &ctx.to_account_infos(), ctx.signer_seeds).map_err(Into::into)
 }

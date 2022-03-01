@@ -7,6 +7,6 @@ description = "Larix Lending Anchor Adaptor"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anchor-lang = "0.21.0"
+anchor-lang = ">=0.22.0"
 thiserror = "1.0.30"
 larix-lending = { path="../larix-lending" }
