@@ -9,4 +9,4 @@ description = "Larix Lending Anchor Adaptor"
 [dependencies]
 anchor-lang = ">=0.22.0"
 thiserror = "1.0.30"
-larix-lending = { path="../larix-lending" }
+larix-lending = { git = "https://github.com/ProjectLarix/larix-lending" }
