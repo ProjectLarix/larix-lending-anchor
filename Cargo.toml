@@ -1,6 +1,6 @@
 [package]
 name = "larix-lending-anchor"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 description = "Larix Lending Anchor Adaptor"
@@ -8,5 +8,5 @@ description = "Larix Lending Anchor Adaptor"
 
 [dependencies]
 anchor-lang = ">=0.22.0"
-thiserror = "1.0.30"
+thiserror = "1.0.31"
 larix-lending = { git = "https://github.com/ProjectLarix/larix-lending" }
